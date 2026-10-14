@@ -9,13 +9,36 @@ from pptx.util import Inches, Pt
 
 
 OUT = Path("/workspace/Ромашина О.В. презентация.pptx")
-ASSETS = Path("/home/ubuntu/.cursor/projects/workspace/assets")
-MISSION_PHOTO = ASSETS / "b8cadcd5-b1a8-4bc2-b789-82acb5443140.jpg"
-VALUES_PHOTO = ASSETS / "cb43bb22-7768-4187-817d-8a77cfb71e1d.jpg"
-WORK_PHOTO = ASSETS / "d32f3dd0-611d-4581-8b50-384b9844b818.jpg"
-DESK_SIDE_PHOTO = ASSETS / "e34c7407-6386-4676-be20-f8da82ad0683.jpg"
-DESK_FRONT_PHOTO = ASSETS / "67a66b21-a2f8-4dde-b70b-aab2b1f59db5.jpg"
-PORTRAIT_PHOTO = ASSETS / "994691e1-b4e7-4356-8398-0b28dbbc9f29.jpg"
+SRC_PPTX = Path("/home/ubuntu/.cursor/projects/workspace/uploads/__________._._____________2f4c.pptx")
+ASSETS_DIR = Path("/workspace/assets_romashina")
+ASSETS_DIR.mkdir(exist_ok=True)
+
+
+def extract_uploaded_images():
+    if SRC_PPTX.exists():
+        src_prs = Presentation(SRC_PPTX)
+        mapping = {
+            (1, 0): "portrait_civil_defense.jpg",
+            (2, 0): "desk_front.png",
+            (4, 0): "client_consultation.png",
+            (5, 0): "desk_side.png",
+        }
+        for s_idx, slide in enumerate(src_prs.slides, 1):
+            p_idx = 0
+            for sh in slide.shapes:
+                if sh.shape_type == 13:
+                    key = (s_idx, p_idx)
+                    if key in mapping:
+                        (ASSETS_DIR / mapping[key]).write_bytes(sh.image.blob)
+                    p_idx += 1
+
+
+extract_uploaded_images()
+
+PORTRAIT_PHOTO = ASSETS_DIR / "portrait_civil_defense.jpg"
+DESK_FRONT_PHOTO = ASSETS_DIR / "desk_front.png"
+CLIENT_PHOTO = ASSETS_DIR / "client_consultation.png"
+DESK_SIDE_PHOTO = ASSETS_DIR / "desk_side.png"
 
 prs = Presentation()
 prs.slide_width = Inches(13.333333)
@@ -26,7 +49,6 @@ NAVY = RGBColor(20, 42, 114)
 BLUE = RGBColor(28, 92, 166)
 CYAN = RGBColor(0, 166, 227)
 MAGENTA = RGBColor(215, 24, 106)
-CORAL = RGBColor(239, 102, 109)
 INK = RGBColor(30, 41, 59)
 MUTED = RGBColor(93, 108, 130)
 LIGHT = RGBColor(244, 247, 251)
@@ -46,14 +68,14 @@ def rect(slide, x, y, w, h, fill, radius=False, line=None, transparency=0):
     shape.fill.transparency = transparency
     shape.line.color.rgb = fill if line is None else line
     if radius:
-        shape.adjustments[0] = 0.12
+        shape.adjustments[0] = 0.08
     return shape
 
 
 def textbox(
-    slide, text, x, y, w, h, size=20, color=INK, bold=False,
+    slide, text, x, y, w, h, size=14, color=INK, bold=False,
     font="Aptos", align=PP_ALIGN.LEFT, valign=MSO_ANCHOR.TOP,
-    margin=0, italic=False, line_spacing=1.0,
+    margin=0, italic=False, line_spacing=1.05,
 ):
     box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
     tf = box.text_frame
@@ -85,14 +107,14 @@ def rich_text(slide, lines, x, y, w, h, margin=0, valign=MSO_ANCHOR.TOP):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
         p.text = item.get("text", "")
         p.font.name = item.get("font", "Aptos")
-        p.font.size = Pt(item.get("size", 18))
+        p.font.size = Pt(item.get("size", 14))
         p.font.bold = item.get("bold", False)
         p.font.italic = item.get("italic", False)
         p.font.color.rgb = item.get("color", INK)
         p.alignment = item.get("align", PP_ALIGN.LEFT)
-        p.space_after = Pt(item.get("after", 6))
+        p.space_after = Pt(item.get("after", 4))
         p.space_before = Pt(item.get("before", 0))
-        p.line_spacing = item.get("spacing", 1.0)
+        p.line_spacing = item.get("spacing", 1.05)
     return box
 
 
@@ -120,191 +142,205 @@ def brand_bar(slide):
     rect(slide, 10.3, 7.36, 3.033, 0.14, CYAN)
 
 
-def title(slide, kicker, heading, number):
-    textbox(slide, kicker.upper(), 0.72, 0.42, 8.8, 0.3, 11, MAGENTA, True)
-    textbox(slide, heading, 0.72, 0.78, 11.4, 0.55, 28, NAVY, True)
-    textbox(slide, f"{number:02d}", 12.05, 0.48, 0.55, 0.3, 11, MUTED, True, align=PP_ALIGN.RIGHT)
-    rect(slide, 0.72, 1.42, 11.88, 0.02, LINE)
+# ==============================================================================
+# SLIDE 1: Титульный блок + Профессиональный путь + Моя роль и обязанности
+# ==============================================================================
+s1 = prs.slides.add_slide(blank)
+s1.background.fill.solid()
+s1.background.fill.fore_color.rgb = LIGHT
 
+# Left panel (Navy)
+rect(s1, 0, 0, 4.30, 7.36, NAVY)
+rect(s1, 4.18, 0, 0.12, 7.36, MAGENTA)
 
-def footer(slide, number, dark=False):
-    color = WHITE if dark else MUTED
-    textbox(slide, "РОМАШИНА ОЛЬГА ВИКТОРОВНА", 0.72, 7.12, 4.2, 0.18, 8, color, True)
-    textbox(slide, str(number), 12.0, 7.12, 0.6, 0.18, 8, color, True, align=PP_ALIGN.RIGHT)
+textbox(s1, "СОЦИАЛЬНЫЙ ФОНД РОССИИ", 0.36, 0.30, 3.60, 0.24, 10, CYAN, True)
+textbox(s1, "ОДИН ДЕНЬ РАБОТЫ В СФР", 0.36, 0.56, 3.65, 0.42, 18.5, WHITE, True)
+rect(s1, 0.36, 1.04, 0.95, 0.05, MAGENTA)
 
+# Portrait photo in left panel
+crop_picture(s1, PORTRAIT_PHOTO, 0.36, 1.20, 3.55, 2.55)
+pic_border = rect(s1, 0.36, 1.20, 3.55, 2.55, WHITE, radius=False, line=CYAN, transparency=100)
+pic_border.line.width = Pt(1.2)
 
-def add_bullet_card(slide, x, y, w, h, num, heading, body, accent):
-    card = rect(slide, x, y, w, h, WHITE, radius=True, line=LINE)
-    card.line.width = Pt(1)
-    rect(slide, x, y, 0.08, h, accent)
-    rect(slide, x + 0.25, y + 0.23, 0.46, 0.46, accent, radius=True)
-    textbox(slide, str(num), x + 0.25, y + 0.25, 0.46, 0.35, 13, WHITE, True, align=PP_ALIGN.CENTER)
-    textbox(slide, heading, x + 0.84, y + 0.20, w - 1.04, 0.34, 15, NAVY, True)
-    textbox(slide, body, x + 0.84, y + 0.58, w - 1.04, h - 0.70, 11.5, MUTED)
+rich_text(s1, [
+    {"text": "Ромашина Ольга Викторовна", "size": 15, "bold": True, "color": WHITE, "after": 3},
+    {"text": "Ведущий специалист-эксперт", "size": 11.5, "bold": True, "color": CYAN, "after": 2},
+    {"text": "отдела установления мер социальной поддержки семьям с детьми Управления социального обеспечения семей с детьми", "size": 10, "color": RGBColor(220, 229, 245), "spacing": 1.05},
+], 0.36, 3.84, 3.60, 1.22)
 
+# Stats badges in left panel
+stat1 = rect(s1, 0.36, 5.14, 1.72, 0.90, BLUE, radius=True)
+textbox(s1, "19 лет", 0.42, 5.20, 1.60, 0.34, 18, WHITE, True, align=PP_ALIGN.CENTER)
+textbox(s1, "профессионального\nопыта", 0.42, 5.54, 1.60, 0.42, 9.5, RGBColor(225, 235, 250), align=PP_ALIGN.CENTER)
 
-# Slide 1 — title
-s = prs.slides.add_slide(blank)
-rect(s, 0, 0, 5.7, 7.5, NAVY)
-rect(s, 5.52, 0, 0.18, 7.5, MAGENTA)
-rect(s, 5.7, 0, 7.633, 7.5, NAVY)
-crop_picture(s, PORTRAIT_PHOTO, 6.98, 0, 5.65, 7.5)
-rect(s, 6.98, 0, 5.65, 7.5, NAVY, transparency=88)
-textbox(s, "СОЦИАЛЬНЫЙ ФОНД РОССИИ", 0.74, 0.62, 4.25, 0.32, 11, CYAN, True)
-textbox(s, "ОДИН ДЕНЬ\nРАБОТЫ В СФР", 0.74, 1.38, 4.45, 1.58, 30, WHITE, True)
-rect(s, 0.74, 3.22, 1.1, 0.07, MAGENTA)
-rich_text(s, [
-    {"text": "Ромашина Ольга Викторовна", "size": 21, "bold": True, "color": WHITE, "after": 10},
-    {"text": "Ведущий специалист-эксперт", "size": 14, "bold": True, "color": WHITE, "after": 5},
-    {"text": "отдела установления мер социальной поддержки семьям с детьми", "size": 12.5, "color": RGBColor(220, 229, 245), "spacing": 1.05, "after": 5},
-    {"text": "Управление социального обеспечения семей с детьми", "size": 12.5, "color": RGBColor(220, 229, 245)},
-], 0.74, 3.58, 4.3, 2.2)
-textbox(s, "ЗАБОТА • ПОЛЕЗНОСТЬ • НАДЁЖНОСТЬ", 0.74, 6.78, 4.4, 0.25, 9, WHITE, True)
-brand_bar(s)
+stat2 = rect(s1, 2.19, 5.14, 1.72, 0.90, BLUE, radius=True)
+textbox(s1, "3,5 года", 2.25, 5.20, 1.60, 0.34, 18, CYAN, True, align=PP_ALIGN.CENTER)
+textbox(s1, "в Управлении соц.\nобеспечения семей", 2.25, 5.54, 1.60, 0.42, 9.5, WHITE, align=PP_ALIGN.CENTER)
 
-
-# Slide 2 — professional path
-s = prs.slides.add_slide(blank)
-s.background.fill.solid()
-s.background.fill.fore_color.rgb = LIGHT
-title(s, "Профессиональный путь", "Опыт, знания, ответственность", 2)
-rect(s, 0.72, 1.86, 3.20, 4.72, NAVY, radius=True)
-textbox(s, "19", 1.04, 2.16, 2.55, 1.03, 50, WHITE, True, align=PP_ALIGN.CENTER)
-textbox(s, "лет профессионального\nопыта", 1.04, 3.18, 2.55, 0.7, 18, WHITE, True, align=PP_ALIGN.CENTER)
-rect(s, 1.24, 4.10, 2.15, 0.03, RGBColor(91, 130, 195))
-textbox(s, "3,5 года", 1.04, 4.47, 2.55, 0.54, 27, CYAN, True, align=PP_ALIGN.CENTER)
-textbox(s, "в Управлении социального\nобеспечения семей с детьми", 1.02, 5.14, 2.60, 0.75, 12.5, WHITE, align=PP_ALIGN.CENTER)
-
-items = [
-    ("ОБРАЗОВАНИЕ", "Московский государственный университет экономики, статистики и информатики", MAGENTA),
-    ("ДОЛЖНОСТЬ", "Ведущий специалист-эксперт отдела установления мер социальной поддержки семьям с детьми", CYAN),
-    ("ПРОФЕССИОНАЛЬНЫЙ ФОКУС", "Точная оценка права на поддержку, внимание к обстоятельствам семьи и понятная помощь гражданам", BLUE),
-]
-for i, (head, body, accent) in enumerate(items):
-    y = 1.86 + i * 1.57
-    card = rect(s, 4.28, y, 8.32, 1.28, WHITE, radius=True, line=LINE)
-    card.line.width = Pt(1)
-    rect(s, 4.28, y, 0.10, 1.28, accent)
-    textbox(s, head, 4.70, y + 0.21, 2.45, 0.25, 11, accent, True)
-    textbox(s, body, 4.70, y + 0.54, 7.42, 0.52, 14, INK, i == 1)
-footer(s, 2)
-brand_bar(s)
-
-
-# Slide 3 — responsibilities
-s = prs.slides.add_slide(blank)
-s.background.fill.solid()
-s.background.fill.fore_color.rgb = LIGHT
-title(s, "Моя роль и обязанности", "Каждое решение — в интересах семьи", 3)
-cards = [
-    ("Заявления на единое пособие", "Рассматриваю заявления и контролирую полноту сведений."),
-    ("Проверка документов", "Проверяю документы и корректность представленных данных."),
-    ("Комплексная оценка", "Провожу комплексную оценку нуждаемости семьи."),
-    ("Сложные ситуации", "Помогаю разобраться в нестандартных жизненных обстоятельствах."),
-    ("Консультирование", "Разъясняю порядок назначения детских пособий, в том числе гражданам, проходящим военную службу."),
-    ("Взаимодействие", "Сотрудничаю с другими отделами Управления и организациями."),
-]
-for i, (head, body) in enumerate(cards):
-    col, row = i % 2, i // 2
-    add_bullet_card(s, 0.72 + col * 6.0, 1.75 + row * 1.68, 5.62, 1.38, i + 1, head, body, MAGENTA if i in (0, 3, 4) else BLUE)
-footer(s, 3)
-brand_bar(s)
-
-
-# Slide 4 — mission
-s = prs.slides.add_slide(blank)
-s.background.fill.solid()
-s.background.fill.fore_color.rgb = LIGHT
-title(s, "Миссия СФР", "Забота о благополучии каждого человека", 4)
-crop_picture(s, MISSION_PHOTO, 0.72, 1.73, 4.65, 4.98)
-frame = rect(s, 0.72, 1.73, 4.65, 4.98, WHITE, radius=True, line=LINE, transparency=100)
-frame.line.width = Pt(1.5)
-textbox(s, "МИССИЯ", 5.86, 1.87, 2.0, 0.3, 11, MAGENTA, True)
-textbox(s, "Мы заботимся\nо благополучии\nкаждого человека", 5.86, 2.25, 6.20, 1.48, 28, NAVY, True)
-rect(s, 5.86, 3.98, 1.10, 0.06, MAGENTA)
+# Education box in left panel
+edu_box = rect(s1, 0.36, 6.14, 3.55, 0.78, RGBColor(14, 31, 88), radius=True, line=BLUE)
+edu_box.line.width = Pt(1)
+textbox(s1, "ОБРАЗОВАНИЕ", 0.48, 6.20, 3.30, 0.20, 8.5, CYAN, True)
 textbox(
-    s,
+    s1,
+    "Московский государственный университет экономики, статистики и информатики",
+    0.48, 6.40, 3.30, 0.46, 9.5, WHITE, line_spacing=1.05,
+)
+
+textbox(s1, "ЗАБОТА • ПОЛЕЗНОСТЬ • НАДЁЖНОСТЬ", 0.36, 7.02, 3.55, 0.22, 8.5, CYAN, True)
+
+# Right side of Slide 1: Professional Path & Focus (Top)
+textbox(s1, "ПРОФЕССИОНАЛЬНЫЙ ПУТЬ И ОБЯЗАННОСТИ", 4.58, 0.28, 7.60, 0.24, 10, MAGENTA, True)
+textbox(s1, "Опыт, знания и каждое решение — в интересах семьи", 4.58, 0.52, 7.80, 0.42, 20, NAVY, True)
+textbox(s1, "01 / 02", 12.10, 0.34, 0.85, 0.28, 10, MUTED, True, align=PP_ALIGN.RIGHT)
+rect(s1, 4.58, 1.00, 8.38, 0.02, LINE)
+
+# Focus card + Desk photo
+focus_card = rect(s1, 4.58, 1.14, 5.55, 1.48, WHITE, radius=True, line=LINE)
+focus_card.line.width = Pt(1)
+rect(s1, 4.58, 1.14, 0.09, 1.48, BLUE)
+textbox(s1, "ПРОФЕССИОНАЛЬНЫЙ ФОКУС", 4.82, 1.24, 5.10, 0.22, 10, BLUE, True)
+textbox(
+    s1,
+    "Точная оценка права на поддержку, внимание к обстоятельствам каждой семьи и понятная помощь гражданам.",
+    4.82, 1.50, 5.12, 0.56, 12, INK, True, line_spacing=1.08,
+)
+textbox(
+    s1,
+    "Профессиональный стаж — 19 лет, из них 3,5 года в отделе установления мер социальной поддержки семьям с детьми.",
+    4.82, 2.08, 5.12, 0.44, 10.5, MUTED, line_spacing=1.05,
+)
+
+crop_picture(s1, DESK_FRONT_PHOTO, 10.30, 1.14, 2.66, 1.48)
+photo_border1 = rect(s1, 10.30, 1.14, 2.66, 1.48, WHITE, line=LINE, transparency=100)
+photo_border1.line.width = Pt(1)
+
+# Responsibilities header
+textbox(s1, "МОЯ РОЛЬ И ОБЯЗАННОСТИ", 4.58, 2.76, 8.38, 0.26, 11, MAGENTA, True)
+
+duties = [
+    ("1", "Соблюдение законодательства РФ", "Неукоснительно соблюдать законодательство Российской Федерации при рассмотрении обращений и назначении мер поддержки.", MAGENTA),
+    ("2", "Консультирование граждан", "Консультирование граждан о назначении детских пособий, помощь в разъяснении порядка и условий предоставления выплат.", BLUE),
+    ("3", "Работа в ГИС ЕЦП и анализ сведений", "Осуществлять в ГИС ЕЦП анализ заявлений, ручную обработку сведений Росреестра, вводить данные из скан-образцов и нецифровых источников подтверждающих документов.", BLUE),
+    ("4", "Применение информационных систем", "В своей деятельности использовать программное обеспечение ГИС ЕЦП, АРМ ГС, СЭД, а также разрешенные к применению носители информации.", MAGENTA),
+    ("5", "Защита информации и дисциплина", "Обеспечивать выполнение требований по защите информации и соблюдение внутреннего трудового распорядка отделения.", NAVY),
+]
+
+for idx, (num, title_txt, desc_txt, accent) in enumerate(duties):
+    y = 3.06 + idx * 0.78
+    card = rect(s1, 4.58, y, 8.38, 0.68, WHITE, radius=True, line=LINE)
+    card.line.width = Pt(1)
+    rect(s1, 4.58, y, 0.08, 0.68, accent)
+    badge = rect(s1, 4.76, y + 0.14, 0.40, 0.40, accent, radius=True)
+    textbox(s1, num, 4.76, y + 0.19, 0.40, 0.30, 11.5, WHITE, True, align=PP_ALIGN.CENTER)
+    textbox(s1, title_txt, 5.28, y + 0.08, 7.50, 0.22, 11, NAVY, True)
+    textbox(s1, desc_txt, 5.28, y + 0.31, 7.52, 0.34, 9.8, INK, line_spacing=1.02)
+
+textbox(s1, "РОМАШИНА ОЛЬГА ВИКТОРОВНА", 4.58, 7.08, 4.5, 0.20, 8, MUTED, True)
+textbox(s1, "1", 12.36, 7.08, 0.6, 0.20, 8, MUTED, True, align=PP_ALIGN.RIGHT)
+brand_bar(s1)
+
+
+# ==============================================================================
+# SLIDE 2: Миссия СФР + Ценности Фонда + Рабочий процесс в кадре + Заключение
+# ==============================================================================
+s2 = prs.slides.add_slide(blank)
+s2.background.fill.solid()
+s2.background.fill.fore_color.rgb = LIGHT
+
+textbox(s2, "МИССИЯ, ЦЕННОСТИ И ИТОГИ РАБОТЫ", 0.56, 0.28, 8.80, 0.24, 10, MAGENTA, True)
+textbox(s2, "Забота о благополучии каждого человека и ориентиры в работе", 0.56, 0.52, 11.20, 0.42, 20, NAVY, True)
+textbox(s2, "02 / 02", 12.00, 0.34, 0.78, 0.28, 10, MUTED, True, align=PP_ALIGN.RIGHT)
+rect(s2, 0.56, 1.00, 12.21, 0.02, LINE)
+
+# Left column: Mission card (with client photo)
+mission_card = rect(s2, 0.56, 1.16, 5.95, 4.16, WHITE, radius=True, line=LINE)
+mission_card.line.width = Pt(1)
+rect(s2, 0.56, 1.16, 5.95, 0.08, MAGENTA)
+
+crop_picture(s2, CLIENT_PHOTO, 0.76, 1.38, 2.35, 3.74)
+textbox(s2, "МИССИЯ СФР", 3.28, 1.36, 3.00, 0.24, 10.5, MAGENTA, True)
+textbox(s2, "Мы заботимся\nо благополучии\nкаждого человека", 3.28, 1.62, 3.05, 0.96, 17.5, NAVY, True, line_spacing=1.05)
+rect(s2, 3.28, 2.66, 0.85, 0.05, MAGENTA)
+textbox(
+    s2,
     "Реализуя социальную политику государства, мы обеспечиваем простоту и удобство получения гражданами мер социальной поддержки на основе современных технологий.",
-    5.86, 4.38, 6.20, 1.25, 16, INK, False, line_spacing=1.12,
+    3.28, 2.82, 3.05, 1.36, 10.8, INK, line_spacing=1.08,
 )
-rect(s, 5.86, 5.90, 6.20, 0.70, PALE_BLUE, radius=True)
-textbox(s, "Моя работа помогает воплощать эту миссию каждый день.", 6.17, 6.08, 5.62, 0.3, 14, BLUE, True)
-footer(s, 4)
-brand_bar(s)
-
-
-# Slide 5 — values
-s = prs.slides.add_slide(blank)
-s.background.fill.solid()
-s.background.fill.fore_color.rgb = LIGHT
-title(s, "Ценности фонда", "Ориентиры в ежедневной работе", 5)
-values = [
-    ("ЗАБОТА", "внимание к человеку"),
-    ("ПОЛЕЗНОСТЬ", "реальная помощь"),
-    ("ДОСТУПНОСТЬ И ОТКРЫТОСТЬ", "понятные решения"),
-    ("НАДЁЖНОСТЬ", "ответственность за результат"),
-    ("САМОСОВЕРШЕНСТВОВАНИЕ", "новые знания и навыки"),
-    ("ЕДИНСТВО", "работа одной командой"),
-]
-for i, (head, body) in enumerate(values):
-    col, row = i % 2, i // 2
-    x, y = 0.72 + col * 2.92, 1.79 + row * 1.44
-    fill = PALE_PINK if i in (0, 3, 4) else PALE_BLUE
-    accent = MAGENTA if i in (0, 3, 4) else BLUE
-    rect(s, x, y, 2.66, 1.14, fill, radius=True, line=fill)
-    textbox(s, head, x + 0.18, y + 0.18, 2.30, 0.30, 10.5, accent, True, align=PP_ALIGN.CENTER)
-    textbox(s, body, x + 0.18, y + 0.60, 2.30, 0.28, 10.5, INK, align=PP_ALIGN.CENTER)
-crop_picture(s, VALUES_PHOTO, 6.76, 1.73, 5.84, 4.98)
-frame = rect(s, 6.76, 1.73, 5.84, 4.98, WHITE, radius=True, line=LINE, transparency=100)
-frame.line.width = Pt(1.5)
-footer(s, 5)
-brand_bar(s)
-
-
-# Slide 6 — workday in photos
-s = prs.slides.add_slide(blank)
-s.background.fill.solid()
-s.background.fill.fore_color.rgb = LIGHT
-title(s, "Один день работы в СФР", "Рабочий день в кадре", 6)
-photo_data = [
-    (DESK_SIDE_PHOTO, "РАБОТА С ЗАЯВЛЕНИЯМИ", "Внимание к деталям"),
-    (DESK_FRONT_PHOTO, "АНАЛИЗ ДОКУМЕНТОВ", "Точность каждого решения"),
-    (WORK_PHOTO, "КОНСУЛЬТИРОВАНИЕ", "Помощь в сложной ситуации"),
-]
-for i, (photo, head, caption) in enumerate(photo_data):
-    x = 0.72 + i * 4.02
-    crop_picture(s, photo, x, 1.72, 3.67, 4.42)
-    rect(s, x, 5.15, 3.67, 0.99, NAVY, transparency=10)
-    textbox(s, head, x + 0.18, 5.33, 3.31, 0.24, 10.5, WHITE, True, align=PP_ALIGN.CENTER)
-    textbox(s, caption, x + 0.18, 5.70, 3.31, 0.23, 10.5, RGBColor(220, 231, 246), align=PP_ALIGN.CENTER)
-textbox(s, "За каждым заявлением — конкретная семья.", 2.35, 6.50, 8.63, 0.36, 17, NAVY, True, align=PP_ALIGN.CENTER, italic=True)
-footer(s, 6)
-brand_bar(s)
-
-
-# Slide 7 — conclusion
-s = prs.slides.add_slide(blank)
-rect(s, 0, 0, 13.333, 7.5, NAVY)
-rect(s, 0, 0, 0.18, 7.5, MAGENTA)
-rect(s, 10.76, 0, 2.573, 7.5, BLUE)
-crop_picture(s, WORK_PHOTO, 9.06, 0.82, 3.56, 5.42)
-rect(s, 9.06, 0.82, 3.56, 5.42, NAVY, transparency=82)
-textbox(s, "ОДИН ДЕНЬ РАБОТЫ В СФР", 0.86, 0.90, 5.80, 0.3, 11, CYAN, True)
-textbox(s, "СПАСИБО\nЗА ВНИМАНИЕ!", 0.86, 1.52, 7.55, 1.24, 34, WHITE, True)
-rect(s, 0.86, 3.08, 1.12, 0.06, MAGENTA)
+mission_note = rect(s2, 3.28, 4.30, 3.05, 0.82, PALE_BLUE, radius=True)
 textbox(
-    s,
-    "Опыт помогает принимать взвешенные решения, а ценности Фонда — сохранять внимание к каждому человеку.",
-    0.86, 3.56, 7.08, 1.05, 18, RGBColor(222, 231, 246), False, line_spacing=1.14,
+    s2,
+    "Моя работа помогает воплощать эту миссию каждый день.",
+    3.42, 4.44, 2.78, 0.54, 10.5, BLUE, True, line_spacing=1.08,
 )
-rect(s, 0.86, 5.15, 6.98, 0.86, WHITE, radius=True, transparency=91)
-textbox(s, "Забота о людях — основа нашей работы.", 1.15, 5.39, 6.38, 0.34, 17, WHITE, True)
-textbox(s, "РОМАШИНА ОЛЬГА ВИКТОРОВНА", 0.86, 6.62, 5.1, 0.26, 10, WHITE, True)
-textbox(s, "07", 12.00, 6.98, 0.60, 0.2, 9, WHITE, True, align=PP_ALIGN.RIGHT)
-brand_bar(s)
 
+# Right column: Values of the Fund + Desk Side Photo
+values_card = rect(s2, 6.72, 1.16, 6.05, 4.16, WHITE, radius=True, line=LINE)
+values_card.line.width = Pt(1)
+rect(s2, 6.72, 1.16, 6.05, 0.08, BLUE)
 
-prs.core_properties.title = "Один день работы в СФР — Ромашина Ольга Викторовна"
+textbox(s2, "ЦЕННОСТИ ФОНДА — ОРИЕНТИРЫ В ЕЖЕДНЕВНОЙ РАБОТЕ", 6.94, 1.34, 5.60, 0.24, 10.5, BLUE, True)
+
+values = [
+    ("ЗАБОТА", "внимание к человеку", True),
+    ("ПОЛЕЗНОСТЬ", "реальная помощь", False),
+    ("ДОСТУПНОСТЬ И ОТКРЫТОСТЬ", "понятные решения", False),
+    ("НАДЁЖНОСТЬ", "ответственность за результат", True),
+    ("САМОСОВЕРШЕНСТВОВАНИЕ", "новые знания и навыки", True),
+    ("ЕДИНСТВО", "работа одной командой", False),
+]
+
+for i, (v_head, v_body, is_pink) in enumerate(values):
+    col, row = i % 2, i // 2
+    vx = 6.94 + col * 1.88
+    vy = 1.68 + row * 1.14
+    fill = PALE_PINK if is_pink else PALE_BLUE
+    accent = MAGENTA if is_pink else BLUE
+    rect(s2, vx, vy, 1.76, 0.98, fill, radius=True)
+    textbox(s2, v_head, vx + 0.08, vy + 0.14, 1.60, 0.36, 8.5, accent, True, align=PP_ALIGN.CENTER, line_spacing=1.0)
+    textbox(s2, v_body, vx + 0.08, vy + 0.54, 1.60, 0.32, 9.0, INK, align=PP_ALIGN.CENTER, line_spacing=1.0)
+
+crop_picture(s2, DESK_SIDE_PHOTO, 10.74, 1.68, 1.84, 3.42)
+rect(s2, 10.74, 4.38, 1.84, 0.72, NAVY, transparency=12)
+textbox(
+    s2,
+    "Работа в ГИС ЕЦП\nи анализ документов",
+    10.80, 4.48, 1.72, 0.52, 8.5, WHITE, True, align=PP_ALIGN.CENTER, line_spacing=1.05,
+)
+
+# Bottom Banner: Conclusion & Thank You (Slide 6 content)
+footer_banner = rect(s2, 0.56, 5.48, 12.21, 1.50, NAVY, radius=True)
+rect(s2, 0.56, 5.48, 0.12, 1.50, MAGENTA)
+
+textbox(s2, "ОДИН ДЕНЬ РАБОТЫ В СФР • ЗАКЛЮЧЕНИЕ", 0.88, 5.62, 7.40, 0.22, 9.5, CYAN, True)
+textbox(
+    s2,
+    "Опыт помогает принимать взвешенные решения, а ценности Фонда — сохранять внимание к каждому человеку.",
+    0.88, 5.90, 7.55, 0.56, 13.5, WHITE, False, line_spacing=1.10,
+)
+textbox(
+    s2,
+    "Забота о людях — основа нашей работы.",
+    0.88, 6.52, 7.55, 0.30, 12, RGBColor(202, 225, 250), True, italic=True,
+)
+
+thanks_box = rect(s2, 8.68, 5.68, 3.86, 1.10, MAGENTA, radius=True)
+textbox(
+    s2,
+    "СПАСИБО ЗА ВНИМАНИЕ!",
+    8.78, 5.86, 3.66, 0.40, 18, WHITE, True, align=PP_ALIGN.CENTER,
+)
+textbox(
+    s2,
+    "Ромашина Ольга Викторовна",
+    8.78, 6.32, 3.66, 0.28, 10.5, WHITE, False, align=PP_ALIGN.CENTER,
+)
+
+textbox(s2, "РОМАШИНА ОЛЬГА ВИКТОРОВНА", 0.56, 7.08, 4.5, 0.20, 8, MUTED, True)
+textbox(s2, "2", 12.17, 7.08, 0.6, 0.20, 8, MUTED, True, align=PP_ALIGN.RIGHT)
+brand_bar(s2)
+
+prs.core_properties.title = "Один день работы в СФР — Ромашина Ольга Викторовна (2 слайда)"
 prs.core_properties.subject = "Профессиональная презентация сотрудника СФР"
 prs.core_properties.author = "Ромашина Ольга Викторовна"
 prs.core_properties.keywords = "СФР, социальная поддержка, семьи с детьми"
